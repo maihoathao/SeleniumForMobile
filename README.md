@@ -1,2 +1,2 @@
 # SeleniumWebdriver
-Demo base on Ringi
+Create auto test for ringi by java
