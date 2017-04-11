@@ -37,7 +37,7 @@ public class Common {
 	
 	/*
 	 * Author: hieuht
-	 * Kiểm tra rỗng
+	 * Kiểm tra nếu chuỗi rỗng thì gán chuỗi = "", ngược lại trả ra giá trị của chuỗi
 	 * Date: 22/03/2017
 	 * Parameter: String string: chuỗi kiểm tra
 	 * Output: String: chuỗi sau check

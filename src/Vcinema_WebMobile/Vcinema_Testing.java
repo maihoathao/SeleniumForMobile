@@ -52,7 +52,7 @@ public class Vcinema_Testing
 	public String link = "http://vcinema3.bestapps.vn/";
 	public long startTime;
 	public long endTime;
-	public String env = "Android";
+	public String OS;
 	
 	/*
 	 * Author: hieuht
@@ -78,36 +78,61 @@ public class Vcinema_Testing
 		
 		startTime = System.currentTimeMillis();
 		
-		//Setup device
+		//Tạo file output
+		Excel excel = new Excel();
+		excel.createFileOutput(pathData, timeBuild);
+		excel.accessSheet("Config");
+		
+		String IP = excel.getStringData(1, 1);
+		String Port = excel.getStringData(1, 2);
+		OS = excel.getStringData(1, 7);
+		String DeviceName = excel.getStringData(1, 8);
+		String OsVersion = excel.getStringData(1, 9);
+		String pathChrome = excel.getStringData(1, 10);
+		
+		//Setup device và IP theo thông số trong excel (sheet "config")
 		try {
+			
 			DesiredCapabilities capabilities = null;
-			if(env.equals("Android")) {
+			if(OS.equals("Android")) {
 				//Android
 				capabilities=DesiredCapabilities.android();		 
 				capabilities.setCapability(MobileCapabilityType.BROWSER_NAME,BrowserType.CHROME);
 				capabilities.setCapability(MobileCapabilityType.PLATFORM,Platform.ANDROID);
-				capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME,"Android");
-				capabilities.setCapability(MobileCapabilityType.DEVICE_NAME,"4200e747c6112300");
-				capabilities.setCapability(MobileCapabilityType.VERSION,"5.1.1");	
-				capabilities.setCapability("app","/Users/newbie/Downloads/appium_mobile/com.android.chrome-43.0.2357.93-2357093-minAPI16.apk");	
-			} else if (env.equals("IOS")) {
+				capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, OS);
+				capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, DeviceName);
+				capabilities.setCapability(MobileCapabilityType.VERSION, OsVersion);	
+				capabilities.setCapability("app", pathChrome);	
+
+			} else if (OS.equals("IOS")) {
 				//IOS
 				capabilities=DesiredCapabilities.iphone();		 
-				capabilities.setCapability("deviceName", "iPhone 6");
+				capabilities.setCapability("deviceName", DeviceName);
 				capabilities.setCapability("platformName", "iOS");
-				capabilities.setCapability("platformVersion", "8.3");
+				capabilities.setCapability("platformVersion", OsVersion);
 				//capabilities.setCapability("autoAcceptAlerts", true);
 				//capabilities.setCapability("safariAllowPopups", true);
 				capabilities.setCapability(CapabilityType.BROWSER_NAME, "Safari");
 			}
-			URL url= new URL("http://127.0.0.1:4727/wd/hub");
-			 
+			URL url= new URL("http://"+IP+":"+Port+"/wd/hub");
 			driver = new Driver(capabilities, url);
 			logger.info("Done setup to connect devices");
+			
 		} catch (Exception e) {
-			logger.error("Can not set up device to connect Appium");
+			logger.error("Can not set up device to connect Appium: "+ e.getMessage());
 			logger.info("Exit.");
 			System.exit(0);
+		}
+		
+		//Log tên phiên bản brower đang chạy
+		if(OS.equals("Android")) {
+			driver.get("chrome://version");
+			
+			logger.info("Brower version: " + driver.getText("id=version"));
+		} else if (OS.equals("IOS")) {
+			driver.get("http://www.whoishostingthis.com/tools/user-agent/");
+			List<WebElement> lse = driver.getListElenment("className=info-box");
+			logger.info(lse.get(0).getText());
 		}
 		
 		//Connect database
@@ -121,9 +146,7 @@ public class Vcinema_Testing
 		}
 		logger.info("Connect database success");
 		
-		//Tạo file output
-		Excel excel = new Excel();
-		excel.createFileOutput(pathData, timeBuild);
+		
 	}
 	
 	/*
@@ -145,7 +168,7 @@ public class Vcinema_Testing
 		
 		//Gọi các chức năng theo thứ tự flow
 		for(int i=1; i<excel.getSheet().getPhysicalNumberOfRows(); i++) {
-			try {
+//			try {
 				if(excel.getStringData(Common.getIndex(array, "case"), i).equals(""))
 					break;
 				logger.info("Start testcase "+excel.getStringData(Common.getIndex(array, "case"), i));
@@ -155,12 +178,12 @@ public class Vcinema_Testing
 					excel.printResultToFlow("F", excel.getStringData(Common.getIndex(array, "type"), i), excel, i, resultColumn);
 				}
 				logger.info("End testcase "+excel.getStringData(Common.getIndex(array, "case"), i));
-			} catch (Exception e) {
-				excel.accessSheet("Run");
-				excel.printResultToFlow("F", excel.getStringData(Common.getIndex(array, "type"), i), excel, i, resultColumn);
-				logger.error(e.getMessage());
-				logger.info("End testcase "+excel.getStringData(Common.getIndex(array, "case"), i));
-			}
+//			} catch (Exception e) {
+//				excel.accessSheet("Run");
+//				excel.printResultToFlow("F", excel.getStringData(Common.getIndex(array, "type"), i), excel, i, resultColumn);
+//				logger.error(e.getMessage());
+//				logger.info("End testcase "+excel.getStringData(Common.getIndex(array, "case"), i));
+//			}
 		}
 		excel.finish();
 	}
@@ -226,6 +249,7 @@ public class Vcinema_Testing
 		driver.selectByVisibleText("className=select-rap", city, 1000);
 		
 		List<WebElement> ls = driver.getListElenment("xpath=//span[contains(@class, 'rap-name')]");
+		//Có 2 dòng là address và phone dùng chung 1 loại đối tượng
 		List<WebElement> ls1 = driver.getListElenment("xpath=//span[contains(@class, 'txt-addr')]");
 		int count_name = 0;
 		int count_info = 0;
@@ -233,13 +257,13 @@ public class Vcinema_Testing
 		//Lấy list rạp trên web
 		List<String> listWeb = new ArrayList<String>();
 		
-		while(true) {
+		while(true) {	//khi chưa duyệt hết list rạp chiếu trên MH web
 			if(count_name >= ls.size())
 				break;
 			if(!ls.get(count_name).getText().equals("")) {
-				listWeb.add(ls.get(count_name).getText());
-				listWeb.add(ls1.get(count_info).getText());
-				listWeb.add(ls1.get(count_info+1).getText());
+				listWeb.add(ls.get(count_name).getText());	//đọc và lấy tên rạp chiếu
+				listWeb.add(ls1.get(count_info).getText());		//đọc và lấy địa chỉ
+				listWeb.add(ls1.get(count_info+1).getText());	//đọc và lấy số điện thoại
 			}
 			count_name++;
 			count_info+=2;
@@ -320,17 +344,26 @@ public class Vcinema_Testing
 		
 		//Vào màn hình chi tiết
 		driver.get(link+"mobile/detail_film/"+movie_id);
+		driver.sleep(1000);
 		
 		//driver.sleep(500);
-		driver.click("className=xem-trailer", 500);
+		//driver.click("className=xem-trailer", 500);
+		driver.focusAndClick("className=xem-trailer", 500);
 		
 		String linkTrailerExcel = excel.getStringData(column, 2);
 		
-		try {
+//		try {
+			driver.sleep(5000);
+			System.out.println("trailer: "+driver.getDriver().findElement(By.className("xem-trailer")).getAttribute("href"));
+			
+			System.out.println("ok");
+			driver.click("className=ytp-large-play-button-bg", 2000);
+			System.out.println("error "+driver.getText("className=ytp-error-content-wrap"));
+			System.out.println("ok1");
 			//Check hiện form trailer, nếu ko có --> false
 			driver.click("xpath=//span[contains(@class, 'YouTubePopUp-Close')]", 1000);
 			
-			if (trailer.equals("1")) {
+//			if (trailer.equals("1")) {
 				logger.info("Success verifyTrailer on GUI");
 				logger.info("Start verifyTrailer on DB");
 
@@ -349,21 +382,21 @@ public class Vcinema_Testing
 					logger.error("Fail verifyTrailer on DB");
 					return false;
 				}
-			}
-			else {
-				logger.error("Fail verifyTrailer on GUI");
-				return false;
-			}
-		} catch (org.openqa.selenium.NoSuchElementException e) {
-			if (trailer.equals("0")) {
-				logger.info("Success verifyTrailer on GUI");
-				return true;
-			}
-			else {
-				logger.error("Fail verifyTrailer on GUI");
-				return false;
-			}
-		}
+//			}
+//			else {
+//				logger.error("Fail verifyTrailer on GUI");
+//				return false;
+//			}
+//		} catch (org.openqa.selenium.NoSuchElementException e) {
+//			if (trailer.equals("0")) {
+//				logger.info("Success verifyTrailer on GUI");
+//				return true;
+//			}
+//			else {
+//				logger.error("Fail verifyTrailer on GUI");
+//				return false;
+//			}
+//		}
 	}
 	
 	/*
@@ -485,7 +518,7 @@ public class Vcinema_Testing
 		driver.get(link+"mobile/detail_film/"+movie_id);
 		
 		//Check lịch chiếu phim
-		if(env.equals("IOS")) {
+		if(OS.equals("IOS")) {
 		try {
 			driver.click("xpath=/html/body/section/div/div[4]/div[2]/a", 0);
 			//get list
@@ -510,7 +543,7 @@ public class Vcinema_Testing
 				return false;
 			}
 		}
-		} else if (env.equals("Android")) {
+		} else if (OS.equals("Android")) {
 			try {
 				driver.get(link+"mobile/list_cinema?mv="+movie_id);
 				//get list

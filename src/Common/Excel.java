@@ -57,7 +57,7 @@ public class Excel
 	}
 	
 	public void createFileOutput(String pathfile, String timeBuild) throws Exception {
-//		System.out.println("Working Directory = " + System.getProperty("user.dir"));
+		//Tạo file output tên giông như file input, thêm ngày tháng build project
 		pathFile = pathfile;
 		pathOutput = pathFile.substring(0, pathFile.length()-4)  + "-"+timeBuild+".xls";
 		file = new FileInputStream(new File(pathfile));
@@ -95,9 +95,9 @@ public class Excel
 	 * Ghi file output, đóng file output, đóng file input
 	 */
 	public void finish() throws Exception {
-		file.close();
-		write();
-		wb.close();
+		file.close();	//Đóng file input
+		write();	//Ghi file output
+		wb.close();	//Đóng file output
 	}
 	
 	/*
@@ -186,21 +186,6 @@ public class Excel
 		HSSFRow rows     = sheet.getRow((short)row); 
 		HSSFCell cells   = rows.createCell((short)column); 
 		cells.setCellValue(string); 
-	}
-	
-	/*
-	 * Author: hieuht
-	 * So sánh 2 chuỗi và in kết quả vào excel output
-	 * Parameter: String string1: chuỗi 1, 
-	 * 			  String string2: chuỗi 2,
-	 * 			  int column: số hàng, 
-	 * 			  int row: số cột
-	 */
-	public void compareStringAndPrint(String string1, String string2, int column, int row) throws Exception {
-		if(string1.equals(string2))
-			this.printResultIntoExcel(column, row, true);
-		else
-			this.printResultIntoExcel(column, row, false);
 	}
 	
 	

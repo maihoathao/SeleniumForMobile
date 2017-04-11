@@ -38,6 +38,11 @@ public class Driver
 	 * 	URL url: thông số kết nối Appium
 	 */
 	public Driver(DesiredCapabilities capabilities, URL url) {
+		/*
+		 * Khi dùng RemoteWebDriver thì có thể sử dụng cho cả Android và IOS
+		 * Nếu dùng riêng, Android dùng AndroidDriver
+		 * IOS dùng IOSDriver
+		 */
 		driver = new RemoteWebDriver(url, capabilities);
 	}
 	
@@ -191,9 +196,13 @@ public class Driver
 	 */
 	public void focusAndClick (String locator, int timeSleep) throws Exception {
 		WebElement e = driver.findElement(getBy(locator));
+		
+		//Di chuyển màn hình xuống đối tượng trước khi click
 		Actions actions = new Actions(driver);
 		actions.moveToElement(e);
 		actions.perform();
+		
+		//click
 		e.click();
 		sleep(timeSleep);
 	}
